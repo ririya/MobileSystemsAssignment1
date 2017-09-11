@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void tiltshiftjava(View view){
 //        bmpOut = SpeedyTiltShift.tiltshift_java(bmpIn, 100, 200, 300, 400, 0.5f, 2.1f);
-        bmpOut = SpeedyTiltShift.tiltshift_java(bmpIn, 300, 600, 1000, 1300, 0.5f, 2.1f);
+        bmpOut = SpeedyTiltShift.tiltshift_java(bmpIn, 300, 600, 1000, 1300, 5.0f, 5.0f);
         imageView.setImageBitmap(bmpOut);
     }
     public void tiltshiftcpp(View view){
