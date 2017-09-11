@@ -30,16 +30,15 @@ public class SpeedyTiltShift {
         int offset=0;
         int stride = width;
         in.getPixels(pixels,offset,stride,0,0,width,height);
-
         //obtain separate channels
         readChannels(height, width, pixels, Gpixels, Bpixels, Rpixels);
 
         //blur each channel
-        applyGaussianBlurToAllPixels(Rpixels, width, height, a0, a1, a2, a3, s_far, s_near);
-        applyGaussianBlurToAllPixels(Gpixels, width, height, a0, a1, a2, a3, s_far, s_near);
-        applyGaussianBlurToAllPixels(Bpixels, width, height, a0, a1, a2, a3, s_far, s_near);
-
-        //Build blurred RGB image
+//       Rpixels = applyGaussianBlurToAllPixels(Rpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        Gpixels = applyGaussianBlurToAllPixels(Gpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+//       Bpixels = applyGaussianBlurToAllPixels(Bpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+//
+//        //Build blurred RGB image
         buildRGBimage(height, width, pixels, Bpixels, Gpixels, Rpixels);
 
         out.setPixels(pixels,offset,stride,0,0,width,height);
@@ -77,16 +76,21 @@ public class SpeedyTiltShift {
 //                int RR = 0xff; //set red high
                 int AA = (p>>24)& 0xff;
                 Gpixels[y*width+x] = GG;
-                Rpixels[y*width+x] = RR;
-                Bpixels[y*width+x] = BB;
+//                Rpixels[y*width+x] = RR;
+//                Bpixels[y*width+x] = BB;
+
+                Rpixels[y*width+x] = 0x00;
+                Bpixels[y*width+x] = 0x00;
 //                int color = (AA & 0xff) << 24 | (RR & 0xff) << 16 | (GG & 0xff) << 8 | (BB & 0xff);
 //                pixels[y*width+x] = color;
             }
         }
     }
 
-    private static void applyGaussianBlurToAllPixels(int[] pixels, int width, int height, int a0, int a1, int a2, int a3, float s_far, float s_near)
+    private static int[] applyGaussianBlurToAllPixels(int[] pixels, int width, int height, int a0, int a1, int a2, int a3, float s_far, float s_near)
     {
+        int[] blurredPixels = pixels.clone();
+
         double[][] Gfar = initializeKernel2D(s_far);
         double[][] Gnear = initializeKernel2D(s_near);
 
@@ -94,7 +98,7 @@ public class SpeedyTiltShift {
         {
             for (int x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, s_far, Gfar, pixels);
+                gaussianBlur2D( x,  y,  width,  height, s_far, Gfar, pixels,blurredPixels);
             }
         }
 
@@ -104,7 +108,7 @@ public class SpeedyTiltShift {
             double[][] G10 = initializeKernel2D(sigma10);
             for (int x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, sigma10, G10, pixels);
+                gaussianBlur2D( x,  y,  width,  height, sigma10, G10, pixels,blurredPixels);
             }
         }
 
@@ -114,7 +118,7 @@ public class SpeedyTiltShift {
             double[][] G32 = initializeKernel2D(sigma32);
             for (int x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, sigma32, G32, pixels);
+                gaussianBlur2D( x,  y,  width,  height, sigma32, G32, pixels,blurredPixels);
             }
         }
 
@@ -122,9 +126,11 @@ public class SpeedyTiltShift {
         {
             for (int x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, s_near, Gnear, pixels);
+                gaussianBlur2D( x,  y,  width,  height, s_near, Gnear, pixels,blurredPixels);
             }
         }
+
+        return blurredPixels;
     }
 
     private static double[] initializeKernel(double sigma)
@@ -142,8 +148,6 @@ public class SpeedyTiltShift {
 
     private static double[][] initializeKernel2D(double sigma)
     {
-        int xx;
-        int yy;
         int r = (int) Math.ceil(3 * sigma);
         int kernelLen = 2 * r + 1;
         double[][] G = new double[kernelLen][kernelLen];
@@ -157,7 +161,7 @@ public class SpeedyTiltShift {
         return G;
     }
 
-    private static void gaussianBlur2D(int x, int y, int width, int height, double sigma, double[][] G, int[] p)
+    private static void gaussianBlur2D(int x, int y, int width, int height, double sigma, double[][] G, int[] p, int[] blurredP)
     {
         double pBlur = 0;
         int pixelIndex;
@@ -182,11 +186,12 @@ public class SpeedyTiltShift {
                 {
                     relPixelIndex = relY * width + relX;
                     pBlur = pBlur + G[ky+r][kx+r] * p[relPixelIndex];
+//                    pBlur = 0xff;
                 }
             }
         }
 
-        p[pixelIndex] = (int)Math.round(pBlur);
+        blurredP[pixelIndex] = (int)Math.round(pBlur);
 
     }
 
