@@ -37,8 +37,6 @@ class GaussianKernel{
         return this.r;
     }
 
-
-
 }
 
 
@@ -56,14 +54,14 @@ public class SpeedyTiltShift {
         int height=in.getHeight();
 
         Log.d("TILTSHIFT_JAVA","hey:"+width+","+height);
-        int[] pixels = new int[width*height];
-        int[] Gpixels = new int[width*height];
-        int[] Bpixels = new int[width*height];
-        int[] Rpixels = new int[width*height];
 
-        int[] GpixelsBlur;// = new int[width*height];
-        int[] BpixelsBlur;// = new int[width*height];
-        int[] RpixelsBlur;// = new int[width*height];
+        int pixelsLength = width*height;
+
+        int[] pixels = new int[pixelsLength];
+        int[] Gpixels = new int[pixelsLength];
+        int[] Bpixels = new int[pixelsLength];
+        int[] Rpixels = new int[pixelsLength];
+
 
         int offset=0;
         int stride = width;
@@ -72,12 +70,15 @@ public class SpeedyTiltShift {
         readChannels(height, width, pixels, Gpixels, Bpixels, Rpixels);
 
         //blur each channel
-        RpixelsBlur = applyGaussianBlurToAllPixels(Rpixels, width, height, a0, a1, a2, a3, s_far, s_near);
-        GpixelsBlur = applyGaussianBlurToAllPixels(Gpixels, width, height, a0, a1, a2, a3, s_far, s_near);
-        BpixelsBlur = applyGaussianBlurToAllPixels(Bpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+
+
+
+        Rpixels = applyGaussianBlurToAllPixels(Rpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        Gpixels = applyGaussianBlurToAllPixels(Gpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        Bpixels = applyGaussianBlurToAllPixels(Bpixels, width, height, a0, a1, a2, a3, s_far, s_near);
 //
 //        //Build blurred RGB image
-        buildRGBimage(height, width, pixels, BpixelsBlur, GpixelsBlur, RpixelsBlur);
+        buildRGBimage(height, width, pixels, Bpixels, Gpixels, Rpixels);
 
         out.setPixels(pixels,offset,stride,0,0,width,height);
 
@@ -87,14 +88,19 @@ public class SpeedyTiltShift {
 
     private static void buildRGBimage(int height, int width, int[]pixels, int[]Bpixels, int[] Gpixels, int[] Rpixels)
     {
+
+        int BB,GG,RR,AA;
+
+        AA = 0xff;
+
         for (int y=0; y<height; y++)
         {
             for (int x = 0; x < width; x++)
             {
-                int BB = Bpixels[y*width+x];
-                int GG = Gpixels[y*width+x];
-                int RR = Rpixels[y*width+x];
-                int AA = 0xff;
+                 BB = Bpixels[y*width+x];
+                 GG = Gpixels[y*width+x];
+                 RR = Rpixels[y*width+x];
+//                int AA = 0xff;
                 int color = (AA & 0xff) << 24 | (RR & 0xff) << 16 | (GG & 0xff) << 8 | (BB & 0xff);
                 pixels[y*width+x] = color;
             }
@@ -103,24 +109,19 @@ public class SpeedyTiltShift {
 
     private static void readChannels(int height, int width, int[] pixels, int[] Gpixels, int[] Bpixels, int[] Rpixels)
     {
+        int p, BB,GG,RR;
 
         for (int y=0; y<height; y++){
             for (int x = 0; x<width; x++){
                 // From Google Developer: int color = (A & 0xff) << 24 | (R & 0xff) << 16 | (G & 0xff) << 16 | (B & 0xff);
-                int p = pixels[y*width+x];
-                int BB = p & 0xff;
-                int GG = (p>>8)& 0xff;
-                int RR = (p>>16)& 0xff;
-//                int RR = 0xff; //set red high
-                int AA = (p>>24)& 0xff;
+                p = pixels[y*width+x];
+                BB = p & 0xff;
+                GG = (p>>8)& 0xff;
+                RR = (p>>16)& 0xff;
+//                int AA = (p>>24)& 0xff;
                 Gpixels[y*width+x] = GG;
                 Rpixels[y*width+x] = RR;
                 Bpixels[y*width+x] = BB;
-////
-//                Rpixels[y*width+x] = 0x00;
-//                Bpixels[y*width+x] = 0x00;
-//                int color = (AA & 0xff) << 24 | (RR & 0xff) << 16 | (GG & 0xff) << 8 | (BB & 0xff);
-//                pixels[y*width+x] = color;
             }
         }
     }
@@ -248,7 +249,24 @@ public class SpeedyTiltShift {
 
 
     public static Bitmap tiltshift_cpp(Bitmap in, int a0, int a1, int a2, int a3, float s_far, float s_near){
-        return in;
+
+        Bitmap out;
+        out=in.copy(in.getConfig(),true);
+
+        int width=in.getWidth();
+        int height=in.getHeight();
+
+        Log.d("TILTSHIFT_JAVA","hey:"+width+","+height);
+
+        int[] pixels = new int[width*height];
+
+        int offset=0;
+        int stride = width;
+        in.getPixels(pixels,offset,stride,0,0,width,height);
+
+        nativeTiltShift(pixels, width, height, a0, a1, a2, a3, s_far, s_near);
+
+        return out;
     }
     public static Bitmap tiltshift_neon(Bitmap in, int a0, int a1, int a2, int a3, float s_far, float s_near){
         return in;
