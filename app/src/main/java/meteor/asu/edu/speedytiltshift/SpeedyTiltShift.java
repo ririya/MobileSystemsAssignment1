@@ -3,6 +3,8 @@ package meteor.asu.edu.speedytiltshift;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+
+import java.io.Console;
 import java.lang.*;
 
 /**
@@ -67,17 +69,23 @@ public class SpeedyTiltShift {
         int stride = width;
         in.getPixels(pixels,offset,stride,0,0,width,height);
         //obtain separate channels
+
+        Log.d("myTag", "Reading Channels");
         readChannels(height, width, pixels, Gpixels, Bpixels, Rpixels);
 
         //blur each channel
 
 
-
+        Log.d("myTag", "Blur R Channel");
         Rpixels = applyGaussianBlurToAllPixels(Rpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        Log.d("myTag", "Blur G Channel");
         Gpixels = applyGaussianBlurToAllPixels(Gpixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        Log.d("myTag", "Blur B Channel");
         Bpixels = applyGaussianBlurToAllPixels(Bpixels, width, height, a0, a1, a2, a3, s_far, s_near);
 //
 //        //Build blurred RGB image
+
+        Log.d("myTag", "Buliding final RGB image");
         buildRGBimage(height, width, pixels, Bpixels, Gpixels, Rpixels);
 
         out.setPixels(pixels,offset,stride,0,0,width,height);
@@ -132,7 +140,9 @@ public class SpeedyTiltShift {
 
         GaussianKernel Gfar = initializeKernel2D(s_far);
         GaussianKernel Gnear = initializeKernel2D(s_near);
+        double sigma10, sigma32;
 
+        Log.d("myTag", "0-a0");
         for (int y=0; y<= a0; y++)
         {
             for (int x = 0; x<width; x++)
@@ -141,9 +151,14 @@ public class SpeedyTiltShift {
             }
         }
 
+        Log.d("myTag", "a0-a1");
         for (int y=a0+1; y<a1; y++)
         {
-            double sigma10 = s_far*(a1-y)/(a1-a0);
+            sigma10 = s_far*(double)(a1-y)/(double)(a1-a0);
+            if (sigma10 < 0.7)
+            {
+                continue;
+            }
             GaussianKernel G10 = initializeKernel2D(sigma10);
             for (int x = 0; x<width; x++)
             {
@@ -151,16 +166,21 @@ public class SpeedyTiltShift {
             }
         }
 
+        Log.d("myTag", "a2-a3");
         for (int y=a2+1; y<a3; y++)
         {
-            double sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
+            sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
+            if (sigma32 < 0.7)
+            {
+                continue;
+            }
             GaussianKernel G32 = initializeKernel2D(sigma32);
             for (int x = 0; x<width; x++)
             {
                 gaussianBlur2D( x,  y,  width,  height, G32, pixels,blurredPixels);
             }
         }
-
+        Log.d("myTag", "a3-height");
         for (int y=a3; y< height; y++)
         {
             for (int x = 0; x<width; x++)

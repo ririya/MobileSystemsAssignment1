@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <android/log.h>
 
 #define PI 3.14159
 
@@ -15,7 +16,8 @@ struct GaussianKernel {
 
     int r;
     double weightSum;
-    double kernel[100][100];
+//    double kernel[15][15];
+    double **kernel;
 };
 
 void readChannels(jint height, jint width, jint *pixels, jint *Gpixels, jint *Bpixels, jint *Rpixels)
@@ -70,9 +72,11 @@ GaussianKernel initializeKernel2D(jdouble sigma)
     double temp;
 
     struct GaussianKernel GKernel;
+    GKernel.kernel = (double**) malloc(kernelLen * sizeof(double *));
 
     for (int y = -r; y <= r; y++)
     {
+        GKernel.kernel[y+r] = (double*)  malloc(kernelLen * sizeof(double));
         for (int x = -r; x <= r; x++)
         {
             temp =  exp(-(pow(x, 2) + pow(y, 2)) / (2 * pow(sigma, 2))) / (2 * PI * pow(sigma, 2));
@@ -114,7 +118,6 @@ void gaussianBlur2D(jint x, jint y, jint width, jint height, GaussianKernel GKer
             {
                 relPixelIndex = relY * width + relX;
                 pBlur = pBlur + GKernel.kernel[ky+r][kx+r] * p[relPixelIndex];
-//                    pBlur = 0xff;
             }
         }
     }
@@ -132,8 +135,11 @@ jint* applyGaussianBlurToAllPixels(jint *pixels, long length, jint width, jint h
 
     GaussianKernel Gfar = initializeKernel2D(s_far);
     GaussianKernel Gnear = initializeKernel2D(s_near);
+    double sigma10,sigma32;
 
     jint y,x;
+
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "0 to a0");
 
     for (y=0; y<= a0; y++)
     {
@@ -143,25 +149,47 @@ jint* applyGaussianBlurToAllPixels(jint *pixels, long length, jint width, jint h
         }
     }
 
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "a0 to a1");
+
+
+
     for (y=a0+1; y<a1; y++)
     {
-        double sigma10 = s_far*(a1-y)/(a1-a0);
+        sigma10 = s_far*(double)(a1-y)/(double)(a1-a0);
+
+        if (sigma10<0.7)
+        {
+            continue;
+        }
+
         GaussianKernel G10 = initializeKernel2D(sigma10);
         for (x = 0; x<width; x++)
         {
             gaussianBlur2D( x,  y,  width,  height,  G10, pixels,blurredPixels);
         }
+
+        free(G10.kernel);
     }
+
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "a2 to a3");
 
     for (y=a2+1; y<a3; y++)
     {
-        double sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
+        sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
+        if (sigma32<0.7)
+        {
+            continue;
+        }
         GaussianKernel G32 = initializeKernel2D(sigma32);
         for (x = 0; x<width; x++)
         {
             gaussianBlur2D( x,  y,  width,  height, G32, pixels,blurredPixels);
         }
+
+        free(G32.kernel);
     }
+
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "a3 to height");
 
     for (y=a3; y< height; y++)
     {
@@ -170,6 +198,9 @@ jint* applyGaussianBlurToAllPixels(jint *pixels, long length, jint width, jint h
             gaussianBlur2D( x,  y,  width,  height, Gnear, pixels,blurredPixels);
         }
     }
+
+    free(Gfar.kernel);
+    free(Gnear.kernel);
 
     return blurredPixels;
 }
@@ -199,25 +230,31 @@ Java_meteor_asu_edu_speedytiltshift_SpeedyTiltShift_nativeTiltShift(JNIEnv *env,
     jint *RpixelsBlur;
 
     //obtain separate channels
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Reading Channels");
     readChannels(height, width, pixels, Gpixels, Bpixels, Rpixels);
 
     //blur each channel
 
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Applying R blur");
     RpixelsBlur = applyGaussianBlurToAllPixels(Rpixels, length, width, height, a0, a1, a2, a3, s_far, s_near);
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Applying G blur");
     GpixelsBlur = applyGaussianBlurToAllPixels(Gpixels, length, width, height, a0, a1, a2, a3, s_far, s_near);
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Applying B blur");
     BpixelsBlur = applyGaussianBlurToAllPixels(Bpixels, length, width, height, a0, a1, a2, a3, s_far, s_near);
+
 
 //
 //        //Build blurred RGB image
-//    buildRGBimage(height, width, pixels, BpixelsBlur, GpixelsBlur, RpixelsBlur);
-    buildRGBimage(height, width, pixels, Bpixels, Gpixels, Rpixels);
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Building final RGB Image");
+    buildRGBimage(height, width, pixels, BpixelsBlur, GpixelsBlur, RpixelsBlur);
 
-//    free(Gpixels);
-//    free(Bpixels);
-//    free(Rpixels);
-//    free(GpixelsBlur);
-//    free(BpixelsBlur);
-//    free(RpixelsBlur);
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "Freeing Memory");
+    free(Gpixels);
+    free(Bpixels);
+    free(Rpixels);
+    free(GpixelsBlur);
+    free(BpixelsBlur);
+    free(RpixelsBlur);
 
     env->SetIntArrayRegion(pixelsOut, 0, length, pixels);
     env->ReleaseIntArrayElements(pixels_, pixels, 0);
