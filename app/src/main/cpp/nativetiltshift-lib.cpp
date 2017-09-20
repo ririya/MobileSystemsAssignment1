@@ -64,7 +64,7 @@ void buildRGBimage(jint height, jint width, jint pixels[], int Bpixels[], int Gp
 }
 
 
-int initializeKernel2D(jdouble sigma, double G[31][31])
+int initializeKernel2D(jdouble sigma, double **G)
 {
     int r = (int) ceil(3 * sigma);
     int kernelLen = 2 * r + 1;
@@ -73,13 +73,14 @@ int initializeKernel2D(jdouble sigma, double G[31][31])
     double temp;
 
 //    struct GaussianKernel GKernel;
-//    GKernel.kernel = (double**) malloc(kernelLen * sizeof(double *));
+    G = (double**) malloc(kernelLen * sizeof(double *));
+
 
     int y, x;
 
     for ( y = -r; y <= r; y++)
     {
-//        G[y+r] = (double*)  malloc(kernelLen * sizeof(double));
+        G[y+r] = (double*)  malloc(kernelLen * sizeof(double));
         for (x = -r; x <= r; x++)
         {
             temp =  exp(-(pow(x, 2) + pow(y, 2)) / (2 * pow(sigma, 2))) / (2 * PI * pow(sigma, 2));
@@ -96,7 +97,7 @@ int initializeKernel2D(jdouble sigma, double G[31][31])
 }
 
 
-void gaussianBlur2D(int r, jint x, jint y, jint width, jint height, double G[31][31], int *p, int *blurredP)
+void gaussianBlur2D(int r, jint x, jint y, jint width, jint height, double **G, int *p, int *blurredP)
 {
     double pBlur = 0;
     long pixelIndex;
@@ -147,11 +148,13 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
 
     int maxKernelLen =  2 * maxR + 1;
 
-    double G[31][31];
+//    double G[31][31];
+
+    double **Gfar;
 
     int r;
 
-    r = initializeKernel2D(s_far, G);
+    r = initializeKernel2D(s_far, Gfar);
     double sigma10,sigma32;
 
     jint y,x;
@@ -162,7 +165,7 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
     {
         for (x = 0; x<width; x++)
         {
-            gaussianBlur2D(r, x,  y,  width,  height, G, pixels,blurredPixels);
+            gaussianBlur2D(r, x,  y,  width,  height, Gfar, pixels,blurredPixels);
         }
     }
 
@@ -181,14 +184,14 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
 
         else
         {
-
-            r = initializeKernel2D(sigma10, G);
+            double **G10;
+            r = initializeKernel2D(sigma10, G10);
             for (x = 0; x < width; x++) {
-                gaussianBlur2D(r, x, y, width, height, G, pixels, blurredPixels);
+                gaussianBlur2D(r, x, y, width, height, G10, pixels, blurredPixels);
             }
-        }
 
-//        free(G10.kernel);
+            free(G10);
+        }
     }
 
     for (y=a1+1; y<a2; y++)
@@ -210,16 +213,20 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
             blurredPixels[y * width + x] = pixels[y * width + x];
         }
         else {
-            r = initializeKernel2D(sigma32, G);
+            double **G32;
+            r = initializeKernel2D(sigma32, G32);
             for (x = 0; x < width; x++) {
-                gaussianBlur2D(r, x, y, width, height, G, pixels, blurredPixels);
+                gaussianBlur2D(r, x, y, width, height, G32, pixels, blurredPixels);
             }
+
+                    free(G32);
+
         }
 
-//        free(G32.kernel);
     }
 
-    r = initializeKernel2D(s_near,G);
+    double **Gnear;
+    r = initializeKernel2D(s_near,Gnear);
 
     __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "a3 to height");
 
@@ -227,14 +234,15 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
     {
         for (x = 0; x<width; x++)
         {
-            gaussianBlur2D(r, x,  y,  width,  height, G, pixels,blurredPixels);
+            gaussianBlur2D(r, x,  y,  width,  height, Gnear, pixels,blurredPixels);
         }
     }
 
+    free(Gnear);
+    free(Gfar);
+
     return blurredPixels;
 }
-
-
 
 
 extern "C" {
