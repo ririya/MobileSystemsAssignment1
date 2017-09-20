@@ -13,31 +13,43 @@ import java.lang.*;
 
 class GaussianKernel{
 
-    private double [][] kernel;
-    private double weightSum;
-    private int r;
+//    private double [][] kernel;
+//    private double weightSum;
+//    private int r;
+
+    public double [][] Kernel;
+    public double WeightSum;
+    public int R;
 
     public GaussianKernel(double [][] kernel,  double weightSum, int r)
     {
-        this.kernel = kernel;
-        this.weightSum = weightSum;
-        this.r = r;
+        this.Kernel = kernel;
+        this.WeightSum = weightSum;
+        this.R = r;
     }
 
-    public double[][] GetKernel()
-    {
-        return this.kernel;
-    }
-
-    public double GetWeightSum()
-    {
-        return this.weightSum;
-    }
-
-    public int Get_r()
-    {
-        return this.r;
-    }
+//    public double[][] GetKernel()
+//    {
+//        return this.kernel;
+//    }
+//
+//    public void SetKernel(double[][] kernel)  {
+//        this.kernel = kernel;
+//    }
+//
+//    public double GetWeightSum()
+//    {
+//        return this.weightSum;
+//    }
+//
+//    public void SetWeightSum(double[][] kernel)  {
+//        this.kernel = kernel;
+//    }
+//
+//    public int Get_r()
+//    {
+//        return this.r;
+//    }
 
 }
 
@@ -138,54 +150,67 @@ public class SpeedyTiltShift {
     {
         int[] blurredPixels = pixels.clone();
 
-        GaussianKernel Gfar = initializeKernel2D(s_far);
-        GaussianKernel Gnear = initializeKernel2D(s_near);
+        int maxR = (int) (3*Math.ceil(Math.max(s_far, s_far)));
+
+        int maxKernelLen =  2 * maxR + 1;
+
+        double [][] G = new double[maxKernelLen][maxKernelLen];
+
+        GaussianKernel GKernel = new GaussianKernel(G,0,0);
+
+        initializeKernel2D(s_far,GKernel);
+
         double sigma10, sigma32;
 
+        int y, x;
+
         Log.d("myTag", "0-a0");
-        for (int y=0; y<= a0; y++)
+        for (y=0; y<= a0; y++)
         {
-            for (int x = 0; x<width; x++)
+            for (x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, Gfar, pixels,blurredPixels);
+                gaussianBlur2D( x,  y,  width,  height, GKernel, pixels,blurredPixels);
             }
         }
 
         Log.d("myTag", "a0-a1");
-        for (int y=a0+1; y<a1; y++)
+        for (y=a0+1; y<a1; y++)
         {
             sigma10 = s_far*(double)(a1-y)/(double)(a1-a0);
             if (sigma10 < 0.7)
             {
                 continue;
             }
-            GaussianKernel G10 = initializeKernel2D(sigma10);
-            for (int x = 0; x<width; x++)
+            initializeKernel2D(sigma10,GKernel);
+            for (x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height,  G10, pixels,blurredPixels);
+                gaussianBlur2D( x,  y,  width,  height,  GKernel, pixels,blurredPixels);
             }
         }
 
         Log.d("myTag", "a2-a3");
-        for (int y=a2+1; y<a3; y++)
+        for (y=a2+1; y<a3; y++)
         {
             sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
             if (sigma32 < 0.7)
             {
                 continue;
             }
-            GaussianKernel G32 = initializeKernel2D(sigma32);
-            for (int x = 0; x<width; x++)
+            initializeKernel2D(sigma32, GKernel);
+            for (x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, G32, pixels,blurredPixels);
+                gaussianBlur2D( x,  y,  width,  height, GKernel, pixels,blurredPixels);
             }
         }
+
+        initializeKernel2D(s_near,GKernel);
+
         Log.d("myTag", "a3-height");
-        for (int y=a3; y< height; y++)
+        for (y=a3; y< height; y++)
         {
-            for (int x = 0; x<width; x++)
+            for (x = 0; x<width; x++)
             {
-                gaussianBlur2D( x,  y,  width,  height, Gnear, pixels,blurredPixels);
+                gaussianBlur2D( x,  y,  width,  height, GKernel, pixels,blurredPixels);
             }
         }
 
@@ -208,27 +233,32 @@ public class SpeedyTiltShift {
         return G;
     }
 
-    private static GaussianKernel initializeKernel2D(double sigma)
+    private static void initializeKernel2D(double sigma, GaussianKernel GKernel)
     {
         int r = (int) Math.ceil(3 * sigma);
-        int kernelLen = 2 * r + 1;
-        double[][] G = new double[kernelLen][kernelLen];
+//        int kernelLen = 2 * r + 1;
+//        double[][] G = new double[kernelLen][kernelLen];
         double weightSum = 0;
         double temp;
 
-        for (int y = -r; y <= r; y++)
+        int y,x;
+
+        for (y = -r; y <= r; y++)
         {
-            for (int x = -r; x <= r; x++)
+            for (x = -r; x <= r; x++)
             {
                 temp =  Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2)) / (2 * Math.pow(sigma, 2))) / (2 * Math.PI * Math.pow(sigma, 2));
-                G[y + r][x + r] = temp;
+                GKernel.Kernel[y + r][x + r] = temp;
                 weightSum = weightSum + temp;
             }
         }
 
-        GaussianKernel GKernel = new GaussianKernel(G,weightSum, r);
+//        GaussianKernel GKernel = new GaussianKernel(G,weightSum, r);
+        GKernel.R = r;
+        GKernel.WeightSum = weightSum;
+//        GKernel.Kernel = G;
 
-        return GKernel;
+//        return GKernel;
     }
 
     private static void gaussianBlur2D(int x, int y, int width, int height, GaussianKernel GKernel, int[] p, int[] blurredP)
@@ -239,16 +269,18 @@ public class SpeedyTiltShift {
 
         pixelIndex = y * width + x;
 
-        int r = GKernel.Get_r();
-        double[][] G = GKernel.GetKernel();
-        double weightSum = GKernel.GetWeightSum();
+        int r = GKernel.R;
+        double[][] G = GKernel.Kernel;
+        double weightSum = GKernel.WeightSum;
 
-        for(int ky=-r; ky<=r; ky++)
+        int kx, ky, relY, relX;
+
+        for(ky=-r; ky<=r; ky++)
         {
-            for (int kx = -r; kx <= r; kx++)
+            for (kx = -r; kx <= r; kx++)
             {
-                int relY = y + ky;
-                int relX = x + kx;
+                relY = y + ky;
+                relX = x + kx;
 
                 if (relY < 0 || relY >= height || relX < 0 || relX >= width)
                 {
@@ -284,7 +316,9 @@ public class SpeedyTiltShift {
         int stride = width;
         in.getPixels(pixels,offset,stride,0,0,width,height);
 
-        nativeTiltShift(pixels, width, height, a0, a1, a2, a3, s_far, s_near);
+        int[] pixelsOut = nativeTiltShift(pixels, width, height, a0, a1, a2, a3, s_far, s_near);
+
+        out.setPixels(pixelsOut,offset,stride,0,0,width,height);
 
         return out;
     }
