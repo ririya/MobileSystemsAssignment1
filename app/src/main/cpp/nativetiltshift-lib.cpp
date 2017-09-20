@@ -143,7 +143,7 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
 
 //    int blurredPixels[length];
 
-//    memcpy(blurredPixels,pixels,length);
+    memcpy(blurredPixels,pixels,length);
 //
     int maxR = (int) (3*ceil((s_near)));
 
@@ -180,7 +180,8 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
 
         if (sigma10<0.7)
         {
-            blurredPixels[y * width + x] = pixels[y * width + x];
+           // blurredPixels[y * width + x] = pixels[y * width + x];
+            continue;
         }
 
         else
@@ -195,14 +196,14 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
         }
     }
 
-    for (y=a1+1; y<a2; y++)
-    {
-        for (x = 0; x<width; x++)
-        {
-            blurredPixels[y * width + x] = pixels[y * width + x];
-        }
-//
-    }
+//    for (y=a1+1; y<a2; y++)
+//    {
+//        for (x = 0; x<width; x++)
+//        {
+//            blurredPixels[y * width + x] = pixels[y * width + x];
+//        }
+////
+//    }
 
     __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "a2 to a3");
 
@@ -211,7 +212,8 @@ int* applyGaussianBlurToAllPixels(int *pixels, long length, jint width, jint hei
         sigma32 = s_near*(double)(y-a2)/(double)(a3-a2);
         if (sigma32<0.7)
         {
-            blurredPixels[y * width + x] = pixels[y * width + x];
+//            blurredPixels[y * width + x] = pixels[y * width + x];
+            continue;
         }
         else {
             double **G32;
