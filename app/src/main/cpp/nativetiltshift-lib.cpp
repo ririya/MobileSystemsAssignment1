@@ -116,17 +116,18 @@ void gaussianBlur2D(int r, jint x, jint y, jint width, jint height, double **G, 
         for (kx = -r; kx <= r; kx++)
         {
             relY = y + ky;
-            relX = x + kx;
-
-            if (relY < 0 || relY >= height || relX < 0 || relX >= width)
-            {
+            if (relY < 0){
                 continue;
             }
-            else
-            {
+            if(relY >= height)
+            {continue;}
+            relX = x + kx;
+            if(relX < 0){continue;}
+            if(relX >= width)            {continue;}
+
                 relPixelIndex = relY * width + relX;
                 pBlur = pBlur + G[ky+r][kx+r] * p[relPixelIndex];
-            }
+
         }
     }
 
