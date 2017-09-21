@@ -23,12 +23,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inPreferredConfig = Bitmap.Config.ARGB_8888; // Each pixel is 4 bytes: Alpha, Red, Green, Blue
         bmpIn = BitmapFactory.decodeResource(getResources(), R.drawable.input, opts);
         imageView = (ImageView) findViewById(R.id.imageView);
     }
     public void tiltshiftjava(View view){
+
+        int a = 1000/0;
         long startTime = System.currentTimeMillis();
         Log.d("myTag", "Java Blur");
 //        bmpOut = SpeedyTiltShift.tiltshift_java(bmpIn, 100, 200, 300, 400, 0.5f, 2.1f);

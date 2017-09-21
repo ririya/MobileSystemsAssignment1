@@ -76,7 +76,6 @@ public class SpeedyTiltShift {
         int[] Bpixels = new int[pixelsLength];
         int[] Rpixels = new int[pixelsLength];
 
-
         int offset=0;
         int stride = width;
         in.getPixels(pixels,offset,stride,0,0,width,height);
