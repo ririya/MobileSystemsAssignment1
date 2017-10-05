@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void tiltshiftjava(View view){
 
-        int a = 1000/0;
+//        int a = 1000/0;
         long startTime = System.currentTimeMillis();
         Log.d("myTag", "Java Blur");
 //        bmpOut = SpeedyTiltShift.tiltshift_java(bmpIn, 100, 200, 300, 400, 0.5f, 2.1f);
@@ -60,9 +60,17 @@ public class MainActivity extends AppCompatActivity {
         cppElapsedView.setTextColor(Color.WHITE);
     }
     public void tiltshiftneon(View view){
+
+        long startTime = System.currentTimeMillis();
         Log.d("myTag", "Neon Blur");
         bmpOut = SpeedyTiltShift.tiltshift_neon(bmpIn, 100, 200, 300, 400, 0.5f, 2.1f);
         imageView.setImageBitmap(bmpOut);
+
+        TextView neonElapsedView = (TextView) findViewById(R.id.neonElapsed);
+        double neonTime = (double) (System.currentTimeMillis() - startTime)/1000;
+        String neonTimeString = "Neon Elapsed Time: " + Double.toString(neonTime) + " seconds";
+        neonElapsedView.setText(neonTimeString);
+        neonElapsedView.setTextColor(Color.WHITE);
     }
 }
 

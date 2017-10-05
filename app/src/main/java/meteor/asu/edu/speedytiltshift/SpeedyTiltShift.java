@@ -307,7 +307,7 @@ public class SpeedyTiltShift {
         int width=in.getWidth();
         int height=in.getHeight();
 
-        Log.d("TILTSHIFT_JAVA","hey:"+width+","+height);
+        Log.d("TILTSHIFT_CPP","hey:"+width+","+height);
 
         int[] pixels = new int[width*height];
 
@@ -322,6 +322,24 @@ public class SpeedyTiltShift {
         return out;
     }
     public static Bitmap tiltshift_neon(Bitmap in, int a0, int a1, int a2, int a3, float s_far, float s_near){
+
+
+        Bitmap out;
+        out=in.copy(in.getConfig(),true);
+
+        int width=in.getWidth();
+        int height=in.getHeight();
+
+        Log.d("TILTSHIFT_NEON","hey:"+width+","+height);
+
+        int[] pixels = new int[width*height];
+
+        int offset=0;
+        int stride = width;
+        in.getPixels(pixels,offset,stride,0,0,width,height);
+
+        int[] pixelsOut = nativeTiltShiftNeon(pixels, width, height, a0, a1, a2, a3, s_far, s_near);
+
         return in;
     }
     private static native int[] nativeTiltShift(int[] pixels, int imgW, int imgH, int a0, int a1, int a2, int a3, float s_far, float s_near);
