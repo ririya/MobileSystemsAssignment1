@@ -235,8 +235,6 @@ public class SpeedyTiltShift {
     private static void initializeKernel2D(double sigma, GaussianKernel GKernel)
     {
         int r = (int) Math.ceil(3 * sigma);
-//        int kernelLen = 2 * r + 1;
-//        double[][] G = new double[kernelLen][kernelLen];
         double weightSum = 0;
         double temp;
 
@@ -252,12 +250,8 @@ public class SpeedyTiltShift {
             }
         }
 
-//        GaussianKernel GKernel = new GaussianKernel(G,weightSum, r);
         GKernel.R = r;
         GKernel.WeightSum = weightSum;
-//        GKernel.Kernel = G;
-
-//        return GKernel;
     }
 
     private static void gaussianBlur2D(int x, int y, int width, int height, GaussianKernel GKernel, int[] p, int[] blurredP)
@@ -289,7 +283,6 @@ public class SpeedyTiltShift {
                 {
                     relPixelIndex = relY * width + relX;
                     pBlur = pBlur + G[ky+r][kx+r] * p[relPixelIndex];
-//                    pBlur = 0xff;
                 }
             }
         }
@@ -340,7 +333,9 @@ public class SpeedyTiltShift {
 
         int[] pixelsOut = nativeTiltShiftNeon(pixels, width, height, a0, a1, a2, a3, s_far, s_near);
 
-        return in;
+        out.setPixels(pixelsOut,offset,stride,0,0,width,height);
+
+        return out;
     }
     private static native int[] nativeTiltShift(int[] pixels, int imgW, int imgH, int a0, int a1, int a2, int a3, float s_far, float s_near);
     private static native int[] nativeTiltShiftNeon(int[] pixels, int imgW, int imgH, int a0, int a1, int a2, int a3, float s_far, float s_near);
